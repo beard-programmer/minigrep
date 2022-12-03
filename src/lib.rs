@@ -30,15 +30,18 @@ fn search<'a>(
     line_transform: Option<fn(&str) -> String>,
 ) -> Vec<&'a str> {
     let line_transform = line_transform.unwrap_or(|some_line: &str| some_line.to_string());
-    let mut search_result: Vec<&str> = Vec::new();
     let transformed_query = line_transform(query);
-    for line in contents.lines() {
-        let transformed_line = line_transform(line);
-        if transformed_line.contains(&transformed_query) {
-            search_result.push(line);
-        }
-    }
-    search_result
+    contents
+        .lines()
+        .filter_map(|line| {
+            let transformed_line = line_transform(line);
+            if transformed_line.contains(&transformed_query) {
+                Some(line)
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 pub struct Config {

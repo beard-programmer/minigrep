@@ -29,13 +29,8 @@ fn search<'a>(
     let transformed_query = line_transform(query);
     contents
         .lines()
-        .filter_map(|line| {
-            let transformed_line = line_transform(line);
-            match transformed_line.contains(&transformed_query) {
-                true => Some(line.to_string()),
-                false => None,
-            }
-        })
+        .filter(|line| line_transform(line).contains(&transformed_query))
+        .map(|line| line.to_string())
         .collect()
 }
 

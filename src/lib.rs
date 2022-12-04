@@ -1,4 +1,4 @@
-use std::{cmp, env, fs};
+use std::{env, fs};
 
 pub fn run<'a>(config: Config) -> Result<Vec<String>, std::io::Error> {
     let perform_search = |contents: String| {
@@ -46,16 +46,26 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn build(args: &[String]) -> Result<Config, &'static str> {
-        let arguments_required = 3;
-        match args.len().cmp(&arguments_required) {
-            cmp::Ordering::Less => Err("not enough arguments"),
-            _ => Ok(Config {
-                query: args[1].clone(),
-                file_path: args[2].clone(),
-                ignore_case: env::var("IGNORE_CASE").is_ok(),
-            }),
-        }
+    pub fn build(mut args: impl Iterator<Item = String>) -> Result<Config, &'static str> {
+        args.next();
+
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
+
+        let file_path = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file path"),
+        };
+
+        let ignore_case = env::var("IGNORE_CASE").is_ok();
+
+        Ok(Config {
+            query,
+            file_path,
+            ignore_case,
+        })
     }
 }
 
@@ -63,7 +73,7 @@ impl Config {
 mod tests {
     use super::*;
     #[test]
-    fn case_sensitive() {
+    fn search_case_sensitive_test() {
         let query = "duct";
         let contents = "\
 Rust:
@@ -78,7 +88,7 @@ Duct tape.";
     }
 
     #[test]
-    fn case_insensitive() {
+    fn search_case_insensitive_test() {
         let query = "rUsT";
         let contents = "\
 Rust:

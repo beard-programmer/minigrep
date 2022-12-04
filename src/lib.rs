@@ -1,14 +1,15 @@
 use std::{cmp, env, fs};
 
 pub fn run<'a>(config: Config) -> Result<Vec<String>, std::io::Error> {
-    let perform_search = match config.ignore_case {
-        true => search_case_insensitive,
-        false => search_case_sensitive,
+    let perform_search = |contents: String| {
+        let search = match config.ignore_case {
+            true => search_case_insensitive,
+            false => search_case_sensitive,
+        };
+        let search_result = search(&config.query, &contents);
+        Ok::<Vec<String>, std::io::Error>(search_result)
     };
-    let contents = fs::read_to_string(config.file_path)?;
-
-    let search_result = perform_search(&config.query, &contents);
-    Ok(search_result)
+    fs::read_to_string(config.file_path).and_then(perform_search)
 }
 
 fn search_case_sensitive<'a>(query: &str, contents: &'a str) -> Vec<String> {

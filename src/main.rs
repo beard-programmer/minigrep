@@ -14,8 +14,15 @@ fn main() {
     println!("Searching for {}", config.query);
     println!("In file {}", config.file_path);
 
-    if let Err(e) = minigrep::run(config) {
-        eprintln!("Application error: {e}");
-        process::exit(1);
+    match minigrep::run(config) {
+        Ok(content) => {
+            for line in content {
+                println!("{line}")
+            }
+        }
+        Err(e) => {
+            eprintln!("Application error: {e}");
+            process::exit(1);
+        }
     }
 }

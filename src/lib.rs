@@ -1,26 +1,21 @@
-use std::{cmp, env, error, fs};
+use std::{cmp, env, fs};
 
-pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
+pub fn run<'a>(config: Config) -> Result<Vec<String>, std::io::Error> {
+    let perform_search = match config.ignore_case {
+        true => search_case_insensitive,
+        false => search_case_sensitive,
+    };
     let contents = fs::read_to_string(config.file_path)?;
 
-    let results = if config.ignore_case {
-        search_case_insensitive(&config.query, &contents)
-    } else {
-        search_case_sensitive(&config.query, &contents)
-    };
-
-    for line in results {
-        println!("{line}");
-    }
-
-    Ok(())
+    let search_result = perform_search(&config.query, &contents);
+    Ok(search_result)
 }
 
-pub fn search_case_sensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+fn search_case_sensitive<'a>(query: &str, contents: &'a str) -> Vec<String> {
     search(query, contents, None)
 }
 
-pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<String> {
     search(query, contents, Some(|line: &str| line.to_lowercase()))
 }
 
@@ -28,17 +23,16 @@ fn search<'a>(
     query: &str,
     contents: &'a str,
     line_transform: Option<fn(&str) -> String>,
-) -> Vec<&'a str> {
+) -> Vec<String> {
     let line_transform = line_transform.unwrap_or(|some_line: &str| some_line.to_string());
     let transformed_query = line_transform(query);
     contents
         .lines()
         .filter_map(|line| {
             let transformed_line = line_transform(line);
-            if transformed_line.contains(&transformed_query) {
-                Some(line)
-            } else {
-                None
+            match transformed_line.contains(&transformed_query) {
+                true => Some(line.to_string()),
+                false => None,
             }
         })
         .collect()
